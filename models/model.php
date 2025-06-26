@@ -20,4 +20,11 @@ class Model {
         $stmt = Banco::getConnection()->prepare($sql);
         return $stmt->execute([$id]);
     }
+    public function resolver($id_chamado) {
+    $sql = "UPDATE chamados SET statuss = 'resolvido', data_fechamento = NOW() WHERE id = ?";
+    $stmt = Banco::getConnection()->prepare($sql);
+    $stmt->execute([$id_chamado]);
+}
+
+
 }

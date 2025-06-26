@@ -19,6 +19,15 @@
             session_destroy();
             header("Location: index.php?page=login");
         exit;
+
+        case 'chamados':
+            $controller = new ChamadoController();
+            $action = $_GET['action'] ?? 'index';
+
+            if ($action === 'assumir') $controller->assumir();
+            elseif ($action === 'confirmar_assumir') $controller->confirmar_assumir();
+                    elseif ($action === 'confirmar_resolver') $controller->confirmar_resolver();
+        break;
         default:
             echo "Página não encontrada.";
         exit;

@@ -7,6 +7,7 @@ class AuthController {
     public function login() {
         $email = $_POST['email'] ?? '';
         $senha = $_POST['senha'] ?? '';
+        
 
         $conn = Banco::getConnection();
         $stmt = $conn->prepare("SELECT * FROM usuarios WHERE email = ?");
@@ -14,10 +15,12 @@ class AuthController {
         $user = $stmt->fetch();
 
         if ($user && password_verify($senha, $user['senha'])) {
-            $_SESSION['usuario'] = $user['usuario'];
-            $_SESSION['logado'] = true; // <<< ESSENCIAL PARA OUTRAS PÁGINAS
             $_SESSION['id'] = $user['id'];
-            header('Location: index.php?page=projetos');
+            $_SESSION['nome'] = $user['nome'];
+            $_SESSION['tipo'] = $user['tipo']; // <-- ESSENCIAL!
+            $_SESSION['logado'] = true;
+
+            header('Location: index.php?page=chamados');
             } else {
             $erro = "Usuário ou senha inválidos.";
             include 'views/auth/Login.php';

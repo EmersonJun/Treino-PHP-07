@@ -1,90 +1,147 @@
 <?php
-class ProjetoController {
-    private $chamadoModel;
-    private $usuarioModel;
-    private $relacionamentoModel;
+class ChamadoController {
+    private $model;
+    private $categoriaModel;
 
     public function __construct() {
-        if (empty($_SESSION['logado']) || $_SESSION['tipo'] !== 'tecnico') {
+        if (empty($_SESSION['logado'])) {
             header("Location: index.php?page=login");
             exit;
         }
-        $this->chamadoModel = new Chamado();
-        $this->usuarioModel = new Usuario();
-        $this->relacionamentoModel = new EquipeProjeto();
+
+        $this->model = new Chamado();
+        $this->categoriaModel = new Categoria();
     }
 
+    // Cliente: lista apenas seus chamados
+    // Técnico: lista todos os chamados
     public function index() {
-        $projetos = $this->chamadoModel->findAll();
-        require 'views/projeto/index.php';
+        $tipo = $_SESSION['tipo'];  
+        $id_usuario = $_SESSION['id'];
+        
+
+        if ($tipo == 'cliente') {
+            $chamados = $this->model->findByCliente($id_usuario);
+        } else {
+            $chamados = $this->model->findAll();
+        }
+
+        require 'views/chamados/index.php';
     }
 
     public function create() {
-        $chamados = $this->equipeModel->findAll();
-        require 'views/projeto/create.php';
+        if ($_SESSION['tipo'] !== 'cliente') {
+    die("Acesso restrito a clientes.");
+}
+
+        $categorias = $this->categoriaModel->findAll();
+        require 'views/chamados/create.php';
     }
 
     public function store() {
-        $titulo = $_POST['titulo'] ?? null;
-        $descricao = $_POST['descricao'] ?? null;
-        $equipes = $_POST['equipes'] ?? [];
 
-        if (empty($titulo)) {
-            die("O campo 'título' é obrigatório.");
-        }
-
-        $this->chamadoModel->save([
-            'titulo' => $titulo,
-            'descricao' => $descricao,
+        $this->model->save([
+            
+            'titulo' => $_POST['titulo'],
+            'descricao' => $_POST['descricao'],
+            'prioridade' => $_POST['prioridade'],
+            'id_categoria' => $_POST['id_categoria'],
+            'id_cliente' => $_SESSION['id']
         ]);
 
-        $projeto_id = Banco::getConnection()->lastInsertId();
-
-        foreach ($equipes as $equipe_id) {
-            $this->relacionamentoModel->save($equipe_id, $projeto_id);
-        }
-
-        header("Location: index.php?page=projetos");
+        header("Location: index.php?page=chamados");
     }
 
     public function edit() {
-        $id = $_GET['id'];
-        $chamado = $this->chamadoModel->findById($id);
-        $equipes = $this->equipeModel->findAll();
-        $equipesSelecionadas = array_column($this->relacionamentoModel->getEquipesByProjeto($id), 'id');
-        require 'views/projeto/edit.php';
+        if ($_SESSION['tipo'] !== 'cliente') {
+    die("Acesso restrito a clientes.");
+}
+
+        $chamado = $this->model->findById($_GET['id']);
+        $categorias = $this->categoriaModel->findAll();
+
+        // Cliente só pode editar os próprios chamados
+        if ($_SESSION['tipo'] == 'cliente' && $chamado['id_cliente'] != $_SESSION['id']) {
+            die("Acesso negado.");
+        }
+
+        require 'views/chamados/edit.php';
     }
 
     public function update() {
-        $id = $_POST['id'];
-        $titulo = $_POST['titulo'] ?? null;
-        $descricao = $_POST['descricao'] ?? null;
-        $equipes = $_POST['equipes'] ?? [];
+        if ($_SESSION['tipo'] !== 'cliente') {
+    die("Acesso restrito a administradores.");
+}
 
-        if (empty($titulo)) {
-            die("O campo 'título' é obrigatório.");
-        }
-
-        $chamado = $this->chamadoModel->findById($id);
-
-        $this->chamadoModel->save([
-            'id' => $id,
-            'titulo' => $titulo,
-            'descricao' => $descricao,
+        $chamado = $this->model->findById($_POST['id']);
+        $this->model->save([
+            'id' => $_POST['id'],
+            'titulo' => $_POST['titulo'],
+            'descricao' => $_POST['descricao'],
+            'prioridade' => $_POST['prioridade'],
+            'id_categoria' => $_POST['id_categoria'],
+            'status' => $_POST['status']
         ]);
 
-        $this->relacionamentoModel->deleteByProjeto($id);
-        foreach ($equipes as $equipe_id) {
-            $this->relacionamentoModel->save($equipe_id, $id);
-        }
-
-        header("Location: index.php?page=projetos");
+        header("Location: index.php?page=chamados");
     }
 
+    // Técnico assume o chamado
+    public function assumir() {
+    if ($_SESSION['tipo'] !== 'tecnico') {
+        die("Acesso restrito a técnicos.");
+    }
+
+    $chamado = $this->model->findById($_GET['id']);
+    $categoria = new Categoria();
+    $cat = $categoria->findById($chamado['id_categoria']);
+    $categoria_nome = $cat['nome'] ?? '—';
+
+    require 'views/chamados/assumir.php';
+}
+public function confirmar_assumir() {
+    if ($_SESSION['tipo'] !== 'tecnico') {
+        die("Acesso restrito a técnicos.");
+    }
+
+    $this->model->atribuirTecnico($_POST['id'], $_SESSION['id']);
+    header("Location: index.php?page=chamados");
+}
+
+
+    public function resolver() {
+    if ($_SESSION['tipo'] !== 'tecnico') {
+        die("Acesso restrito a técnicos.");
+    }
+
+    $chamado = $this->model->findById($_GET['id']);
+    require 'views/chamados/resolver.php';
+}
+
+public function confirmar_resolver() {
+    if ($_SESSION['tipo'] !== 'tecnico') {
+        die("Acesso restrito a técnicos.");
+    }
+
+    $chamado = $this->model->findById($_POST['id']);
+
+    if ($chamado['statuss'] === 'resolvido') {
+        die("Este chamado já foi resolvido.");
+    }
+
+    $this->model->resolver($_POST['id']);
+    header("Location: index.php?page=chamados");
+}
+
+
+
+
     public function delete() {
-        $id = $_GET['id'];
-        $this->relacionamentoModel->deleteByProjeto($id);
-        $this->chamadoModel->delete($id);
-        header("Location: index.php?page=projetos");
+        $chamado = $this->model->findById($_GET['id']);
+        if ($_SESSION['tipo'] == 'cliente' && $chamado['id_cliente'] != $_SESSION['id']) {
+            die("Acesso negado.");
+        }
+        $this->model->delete($_GET['id']);
+        header("Location: index.php?page=chamados");
     }
 }
