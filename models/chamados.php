@@ -43,15 +43,20 @@ class Chamado extends Model {
     }
 
     public function findByCliente($id_cliente) {
-        $sql = "SELECT c.*, cat.nome AS categoria_nome 
-                FROM chamados c
-                JOIN categorias cat ON cat.id = c.id_categoria
-                WHERE c.id_cliente = ?
-                ORDER BY c.id DESC";
-        $stmt = Banco::getConnection()->prepare($sql);
-        $stmt->execute([$id_cliente]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    }
+    $sql = "SELECT c.*, 
+                   t.nome AS tecnico_nome,
+                   cat.nome AS categoria_nome 
+            FROM chamados c
+            LEFT JOIN usuarios t ON t.id = c.id_tecnico
+            JOIN categorias cat ON cat.id = c.id_categoria
+            WHERE c.id_cliente = ?
+            ORDER BY c.id DESC";
+    $stmt = Banco::getConnection()->prepare($sql);
+    $stmt->execute([$id_cliente]);
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+
 
     public function atribuirTecnico($id_chamado, $id_tecnico) {
         $sql = "UPDATE chamados 
@@ -82,11 +87,17 @@ class Chamado extends Model {
     }
 
     public function findAll() {
-        $sql = "SELECT c.*, u.nome AS cliente_nome, cat.nome AS categoria_nome 
-                FROM chamados c
-                JOIN usuarios u ON u.id = c.id_cliente
-                JOIN categorias cat ON cat.id = c.id_categoria
-                ORDER BY c.id DESC";
-        return Banco::getConnection()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
-    }
+    $sql = "SELECT c.*, 
+                   u.nome AS cliente_nome, 
+                   t.nome AS tecnico_nome,
+                   cat.nome AS categoria_nome
+            FROM chamados c
+            JOIN usuarios u ON u.id = c.id_cliente
+            LEFT JOIN usuarios t ON t.id = c.id_tecnico
+            JOIN categorias cat ON cat.id = c.id_categoria
+            ORDER BY c.id DESC";
+    return Banco::getConnection()->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 }
+
+}
+

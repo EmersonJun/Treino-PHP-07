@@ -12,7 +12,18 @@
                 <th>Prioridade</th>
                 <th>Status</th>
                 <th>Categoria</th>
-                <th>Técnico</th>
+                <th>
+    <?php
+        if ($_SESSION['tipo'] === 'cliente') {
+            echo 'Técnico';
+        } elseif ($_SESSION['tipo'] === 'tecnico') {
+            echo 'Usuário';
+        } else {
+            echo 'Usuário'; // para admin ou outro tipo
+        }
+    ?>
+</th>
+
 
                 <th>Ações</th>
             </tr>
@@ -37,7 +48,17 @@
                     </span>
                 </td>
                 <td><?= htmlspecialchars($p['categoria_nome'] ?? '—') ?></td>
-                <td><?= htmlspecialchars($p['tecnico_nome'] ?? '—') ?></td>
+                <td>
+    <?php
+        if ($_SESSION['tipo'] === 'cliente') {
+            echo !empty($p['tecnico_nome']) ? htmlspecialchars($p['tecnico_nome']) : '—';
+        } if ($_SESSION['tipo'] === 'tecnico')  {
+            echo !empty($p['cliente_nome']) ? htmlspecialchars($p['cliente_nome']) : '—';
+        }
+    ?>
+</td>
+
+
                 <td>
                     <?php if ($_SESSION['tipo'] === 'cliente' && $p['id_cliente'] == $_SESSION['id']): ?>
                         <a href="index.php?page=chamados&action=edit&id=<?= $p['id'] ?>" class="btn btn-warning btn-sm">Editar</a>
