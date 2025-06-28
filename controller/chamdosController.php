@@ -139,8 +139,10 @@ public function confirmar_resolver() {
     public function delete() {
         $chamado = $this->model->findById($_GET['id']);
         if ($_SESSION['tipo'] == 'cliente' && $chamado['id_cliente'] != $_SESSION['id']) {
-            die("Acesso negado.");
-        }
+    die("Acesso negado.");
+}
+// admin pode excluir qualquer um, então não bloqueia
+
         $this->model->delete($_GET['id']);
         header("Location: index.php?page=chamados");
     }

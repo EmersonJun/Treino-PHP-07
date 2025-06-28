@@ -1,5 +1,6 @@
 <?php 
-class Usuario {
+class Usuario extends Model {
+    protected $table = "usuarios";
     private $db;
     public function construct() {
         $this->db = Banco::getConnection();

@@ -22,6 +22,7 @@
             <select name="tipo" class="form-control" required>
                 <option value="cliente">cliente</option>
                 <option value="tecnico">tecnico</option>
+                <option value="admin">admin</option>
             </select>
         </div>
         <button class="btn btn-success w-100">Cadastrar</button>

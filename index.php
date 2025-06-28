@@ -19,7 +19,9 @@
             session_destroy();
             header("Location: index.php?page=login");
         exit;
-
+        case 'categorias':
+            $controller = new CategoriaController();
+        break;
         case 'chamados':
             $controller = new ChamadoController();
             $action = $_GET['action'] ?? 'index';
@@ -29,6 +31,11 @@
         default:
             echo "Página não encontrada.";
         exit;
+        case 'usuarios':
+    $controller = new UsuarioController();
+    $action = $_GET['action'] ?? 'index';
+    break;
+
     }
 
     if (method_exists($controller, $action)) {
